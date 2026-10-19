@@ -10,6 +10,13 @@ void PacketLayer::onTransiveDone(uint16_t rxBytes, uint16_t txBytes)
         case TransiveState::handshake:
             m_transmitedHandShake = txBytes;
             m_receivedHandshake = rxBytes;
+            if (txBytes == LINK_SLAVE_HANDSHAKE && m_slaveHandshakesSent < 0xFFFF) m_slaveHandshakesSent++;
+            if (m_connectPending && m_handshakeState == HandShakeState::enabled
+                && m_slaveHandshakesSent >= minSlaveHandshakes)
+            {
+                m_connectPending = false;
+                m_handshakeState = HandShakeState::connect;
+            }
             k_sem_give(&m_handshakeSemaphore);
             m_timingUs = timingHandshake;
 

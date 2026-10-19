@@ -126,9 +126,29 @@ public:
 
     void enableHandshake() { m_handshakeState = HandShakeState::enabled; }
 
-    void connectHandshake() { m_handshakeState = HandShakeState::connect; }
+    // A child GBA needs some 0xB9A0 rounds before it takes the connect word
+    // (the netplay bridge measured ~150 ms and waits that long before sending
+    // ConnectLink). Hold a ConnectLink that arrives sooner until the adapter
+    // has sent minSlaveHandshakes of them.
+    static constexpr uint16_t minSlaveHandshakes = 8;
+
+    void connectHandshake()
+    {
+        if (m_handshakeState == HandShakeState::enabled && m_slaveHandshakesSent >= minSlaveHandshakes)
+            m_handshakeState = HandShakeState::connect;
+        else
+            m_connectPending = true;
+    }
 
     bool isHandshakeEnabled() { return m_transmitedHandShake == LINK_SLAVE_HANDSHAKE; }
+
+    // The connect word has gone out, or the link is already past the handshake.
+    bool isConnectSent()
+    {
+        return m_transmitedHandShake == LINK_MASTER_HANDSHAKE
+            || m_receivedHandshake == LINK_MASTER_HANDSHAKE
+            || m_state != TransiveState::handshake;
+    }
 
     void setMode(Mode mode) 
     {   
@@ -263,6 +283,8 @@ private:
     TransiveStruct m_handler = emptyCommand();
     TransiveState m_state = TransiveState::handshake;
     HandShakeState m_handshakeState = HandShakeState::disabled;
+    uint16_t m_slaveHandshakesSent = 0;
+    bool m_connectPending = false;
 
     struct k_timer m_timeoutTimer;
     #ifdef CONFIG_STM32F0

@@ -12,7 +12,9 @@ void UsbSection::establishConncection()
 
     sendLinkStatus(LinkStatus::HandshakeReceived);
 
-    while (!m_packetLayer.isHandshakeEnabled())
+    // isHandshakeEnabled() means "the last word sent was 0xB9A0", which is
+    // over once 0x8FFF goes out; a 50 ms poll can miss that window entirely.
+    while (!m_packetLayer.isHandshakeEnabled() && !m_packetLayer.isConnectSent())
     { 
         k_sleep(K_MSEC(50));
         if (m_cancel) return; 
