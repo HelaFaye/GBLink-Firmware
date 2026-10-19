@@ -36,6 +36,10 @@ public:
     ~TradeConnection()
     {
         while(!m_packetLayer.idle()) {};
+        // The 2 s request timer can still be armed when the section ends; the
+        // k_timer is a node in the kernel's timeout list and lives in this
+        // object, so it must be stopped before the object goes away.
+        k_timer_stop(&m_commandRequestTimer);
     }
 
     NextSection process() override;
