@@ -43,8 +43,15 @@ void LinkModule::receiveCommand(std::span<const uint8_t> command)
             m_packetLayerMode = PacketLayer::Mode::slave;
             k_sem_give(&m_waitForLinkModeCommand);            
             break;
-        case LinkModeCommand::StartHandshake: return m_currentSection->startHandshake();
-        case LinkModeCommand::ConnectLink: return m_currentSection->connectLink();
+        // There is no section before SetModeMaster/SetModeSlave, nor during the
+        // 400 ms pause between sections; a host retrying at either moment
+        // must not fault the adapter.
+        case LinkModeCommand::StartHandshake:
+            if (UsbSection* s = m_currentSection) s->startHandshake();
+            return;
+        case LinkModeCommand::ConnectLink:
+            if (UsbSection* s = m_currentSection) s->connectLink();
+            return;
         default: break;
     }
 }
