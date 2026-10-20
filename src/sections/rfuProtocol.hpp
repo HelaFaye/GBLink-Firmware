@@ -1965,7 +1965,7 @@ private:
                 else if (state == stClient)
                 {
                     uint32_t cnt = 0;
-                    const uint8_t* p;
+                    const uint8_t* p = nullptr;  // set by read() whenever dlen > 0
                     const uint32_t dlen = m_client.pkt.read(&p);
                     m_buf[cnt++] = dlen;
                     for (uint32_t j = 0; j < (dlen + 3) / 4; j++)
