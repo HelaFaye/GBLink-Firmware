@@ -103,6 +103,9 @@ namespace party
 
     void tradePkmnAtIndex(uint8_t index)
     {
+        // The index comes from the GBA's link word: anything past the party
+        // would read past the partner's and write past ours.
+        if (index >= numberOfSlots) return;
         std::ranges::copy(std::span(g_partnerParty).subspan(index * 100, 100), slot(index).begin());
     }
 
